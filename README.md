@@ -1,2 +1,2 @@
-# bromobenzene
-PhH+Br₂=PhBr+HBr
+# PhBr
+*PhH+Br₂=PhBr+HBr*
