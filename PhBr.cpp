@@ -19,13 +19,26 @@
 #include<cmath>
 #include"json.hpp"
 #define decimal long double
+#define PI ((long double)(3.1415926535897932384))
 using namespace std;
 using json = nlohmann::json;
 
+json CR10J = {
+    {"ID", "CR10J"},
+    {"maximum_acceleration", 0.3},
+    {"maximum_velocity", 3}
+};
+
 json CR100J = {
 	{"ID", "CR100J"},
-	{"maximum_acceleration", 1000},
+	{"maximum_acceleration", 0.5},
 	{"maximum_velocity", 28}
+};
+
+json CR400AF = {
+    {"ID", "CR400AF"},
+    {"maximum_acceleration", 0.53},
+    {"maximum_velocity", 100}
 };
 
 json j = {
@@ -107,45 +120,61 @@ json j = {
 	}}}
 };
 
-// debug
-decimal global_v_cap=-8354.12347;
-
-decimal _basic_velocity(decimal tt, decimal len, decimal v_max) // tt in time_units, result in meter per time_unit assuming a=1
+decimal _basic_v(decimal x, decimal x00, decimal y00)
 {
-	if(tt<0)throw("wth u tried to use a negative time!");
-	cerr<<"\t\ttt="<<tt<<endl;
-	decimal v_cap = (-3.0+sqrt(9.0+4*len))/2.0;
-	v_max=min(v_max,v_cap);
-		global_v_cap=v_cap;
-	decimal ta=v_max+1.00, m=ta+3.00, n=m-4.00, tall=(len-2.0*(0.50*v_max*v_max+v_max))/v_max+2*ta+1.00, tsym=tall-ta+m-1.00;
-	if(tsym-tt<tt)tt=tsym-tt;
-	decimal ret=0;
-	if(tt<=1)ret=0;
-	else if(1<tt&&tt<=2)ret=tt*tt*tt/6.0-0.5*tt*tt+0.5*tt-1/6.0;
-	else if(2<tt&&tt<=3)ret=0-tt*tt*tt/6.0+1.5*tt*tt-3.5*tt+2.5;
-	else if(3<tt&&tt<=m-3)ret=tt-2;
-	else if(m-3<tt&&tt<=m-2)ret=n-(-(m-tt)*(m-tt)*(m-tt)/6.0+1.5*(m-tt)*(m-tt)-3.5*(m-tt)+2.5);
-	else if(m-2<tt&&tt<=m-1)ret=n-((m-tt)*(m-tt)*(m-tt)/6.0-0.5*(m-tt)*(m-tt)+0.5*(m-tt)-1/6.0);
-	else if(m-1<tt)ret=n;
-	return ret;
+	return y00/2*sin(PI/x00*x-PI/2)+y00/2;
 }
 
-decimal velocity(decimal t, long interval_start, long interval_end, json train, json j_=j)
+decimal v(decimal t, json tr, int len)
 {
-	long interval_length=j_["stations"][interval_end].value("meter",0)-j_["stations"][interval_start].value("meter",0);
-	decimal tu=j_.value("time_unit",0);
-	decimal a_max=train.value("maximum_acceleration",0.0)*tu*tu;
-	decimal v_max=train.value("maximum_velocity",0.0)*tu;
-	return _basic_velocity(t/tu,interval_length/a_max,v_max/a_max)*a_max/tu;
+	decimal y00=tr.value("maximum_velocity",0.0);
+	y00=min(y00,len/(decimal)2.0);
+	decimal x00=PI*y00/2/tr.value("maximum_acceleration",0.0);
+	decimal total_time=len/y00-2+2*x00;
+	if(t>=total_time || t<=0)return 0;
+	else if(t>=total_time/2)t=total_time-t;
+	if(t<=x00) return _basic_v(t,x00,y00);
+	else return y00;
+}
+
+decimal place(decimal t, json tr, int len, bool only_get_time=false)
+{
+	if(len<=0)return 0;
+	decimal y00=tr.value("maximum_velocity",0.0);
+    decimal x00=PI*y00/2/tr.value("maximum_acceleration",0.0);
+    if(x00*y00>len)
+	{
+		y00=sqrt(2*len*tr.value("maximum_acceleration",0.0)/PI);
+		x00=len/y00;
+	}
+	decimal total_time=len/y00-2+x00;
+	if(only_get_time)return total_time;
+    if(t>=total_time)return len;
+	else if(t<=0) return 0;
+	if(t<=x00)return y00/2.0*t-y00*x00/2/PI*sin(PI/x00*t);	
+	if(t>=total_time-x00)return (decimal)len-(y00/2.0*(total_time-t)-y00*x00/2/PI*sin(PI/x00*(total_time-t)));
+	else return y00*(t-x00/2.0);
 }
 
 int main()
 {
-	for(decimal d=0;d<=1000;d+=1)
+	srand((unsigned)time(0));
+	pair<int,int> curtime=pair<int,int>(8,0);
+	int last_meter=0;
+	cout<<"越站几率？（0～100）  "<<flush;
+	int quang=0;cin>>quang;
+	for(json::iterator it=j["stations"].begin(); it!=j["stations"].end(); it++)
 	{
-		cout<<"At time "<<d<<"s, the train's velocity is "<<velocity(d,0,3,CR100J)<<"m/s.\n"
+		if(rand()%100<=quang&&it!=j["stations"].begin()&&(it+1)!=j["stations"].end())continue;
+		decimal addtime=place(0,CR400AF,(*it).value("meter",0)-last_meter,true);
+		addtime/=60;
+		curtime.second+=ceil(addtime);
+		while(curtime.second>=60)curtime.second-=60,curtime.first++;
+		cout<<(*it).value("name","zero")<<' '<<curtime.first<<':'<<curtime.second<<' ';
+		curtime.second+=2;
+		while(curtime.second>=60)curtime.second-=60,curtime.first++;
+		cout<<curtime.first<<':'<<curtime.second<<'\n';
+		last_meter=(*it).value("meter",0);
 	}
-
 	return 0;
 }
-// 最大加速度不可过大，因若然则未达到最大加速度前即达最大速度，bug！
