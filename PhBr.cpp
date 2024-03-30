@@ -132,7 +132,7 @@ string find_path(int st, int en)
 	{
 		if(v[st].dirs[i].dis>0 && !used[v[st].dirs[i].nex])
 		{
-					string ret=find_path(v[st].dirs[i].nex,en);
+			string ret=find_path(v[st].dirs[i].nex,en);
 			if(ret!="")
 			{
 				ret.insert(0,"->");
