@@ -1,0 +1,6 @@
+serial number
+identifier
+maximum acceleration
+maximum velocity
+is distributed? (0/1)
+can run on high speed railway? (0/1)

@@ -1,0 +1,25 @@
+for each station:
+```
+@serial number
+identifier
+number of distinct directions
+[directions]
+[compatibility of directions]
+``` where [directions] = a list of directions
+
+for each direction:
+```
+serial number
+line name
+next station's number and direction
+distance
+```
+
+distance == -1 signifies a ternimal
+
+[compatibility of directions]: a table of n*n, where n = number of directions
+element = 0  ->  not accesible from row to column
+element = 1  ->  good
+element = 2  ->  row can go to column but needs turning around
+element = 3  ->  row can go to column but needs other ways to do so
+element = 9  ->  at least one of the two directions is ternimal.
