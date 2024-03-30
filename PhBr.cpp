@@ -23,16 +23,22 @@
 using namespace std;
 using json = nlohmann::json;
 
+json CR1J = { 
+    {"ID", "CR1J"},
+    {"maximum_acceleration", 0.2},
+    {"maximum_velocity", 0.278}
+};
+
 json CR10J = {
     {"ID", "CR10J"},
     {"maximum_acceleration", 0.3},
     {"maximum_velocity", 3}
 };
 
-json CR100J = {
-	{"ID", "CR100J"},
-	{"maximum_acceleration", 0.5},
-	{"maximum_velocity", 28}
+json CR200J = {
+	{"ID", "CR200J"},
+	{"maximum_acceleration", 0.41},
+	{"maximum_velocity", 34.3}
 };
 
 json CR400AF = {
@@ -41,10 +47,21 @@ json CR400AF = {
     {"maximum_velocity", 100}
 };
 
+json CR1000Z = {
+    {"ID", "CR1000Z"},
+    {"maximum_acceleration", 1},
+    {"maximum_velocity", 277.78}
+};
+
+json CRNAN = {
+    {"ID", "CRNAN"},
+    {"maximum_acceleration", 100},
+    {"maximum_velocity", 100000}
+};
+
 json j = {
 	{"ID", -1},
 	{"name", "random"},
-	{"time_unit",30},
 	{"stations", {{
 		{"name", "长亘"},
         {"platforms",1},
@@ -117,6 +134,36 @@ json j = {
 		{"name", "千兰北"},
 		{"platforms",1},
 		{"meter",150067}
+	},{
+		{"name", "随机市北"},
+        {"platforms",1},
+        {"meter",8127383}
+	}}}
+};
+
+json jingjiu = {
+    {"ID", 2},
+    {"name", "jingjiuxian"},
+    {"stations", {{
+        {"name", "北京西"},
+        {"platforms",1},
+        {"meter",0}
+    },{
+        {"name", "任丘"},
+        {"platforms",1},
+        {"meter",147000}
+    },{
+        {"name", "衡水"},
+        {"platforms",1},
+        {"meter",274000}
+    },{
+        {"name", "九江"},
+        {"platforms",1},
+        {"meter",1314000}
+    },{
+        {"name", "南昌"},
+        {"platforms",1},
+        {"meter",1449000}
 	}}}
 };
 
@@ -156,25 +203,36 @@ decimal place(decimal t, json tr, int len, bool only_get_time=false)
 	else return y00*(t-x00/2.0);
 }
 
+void generate_simple_timetable(json line, json tr, pair<int,int> starting_time)
+{
+	pair<int,int> curtime=starting_time;int day=0;
+    int last_meter=0;
+    cout<<"越站几率？（0～100）  "<<flush;
+    int quang=0;cin>>quang;
+    for(json::iterator it=line["stations"].begin(); it!=line["stations"].end(); it++)
+    {
+        if(rand()%100<=quang&&it!=line["stations"].begin()&&(it+1)!=line["stations"].end())continue;
+        decimal addtime=place(0,tr,(*it).value("meter",0)-last_meter,true);
+        addtime/=60;
+        curtime.second+=ceil(addtime);
+        while(curtime.second>=60)curtime.second-=60,curtime.first++;
+        while(curtime.first>=24)curtime.first-=24,day++;
+		string pp=(*it).value("name","zero");
+        cout<<pp;
+		for(int j=pp.length()/3*2;j<=11;j++)cout<<' ';
+		cout<<'+'<<day<<' '<<curtime.first<<':'<<curtime.second<<' ';
+        curtime.second+=2;
+        while(curtime.second>=60)curtime.second-=60,curtime.first++;
+        cout<<'+'<<day<<' '<<curtime.first<<':'<<curtime.second<<'\n';
+        last_meter=(*it).value("meter",0);
+    }
+}
+
 int main()
 {
 	srand((unsigned)time(0));
-	pair<int,int> curtime=pair<int,int>(8,0);
-	int last_meter=0;
-	cout<<"越站几率？（0～100）  "<<flush;
-	int quang=0;cin>>quang;
-	for(json::iterator it=j["stations"].begin(); it!=j["stations"].end(); it++)
-	{
-		if(rand()%100<=quang&&it!=j["stations"].begin()&&(it+1)!=j["stations"].end())continue;
-		decimal addtime=place(0,CR400AF,(*it).value("meter",0)-last_meter,true);
-		addtime/=60;
-		curtime.second+=ceil(addtime);
-		while(curtime.second>=60)curtime.second-=60,curtime.first++;
-		cout<<(*it).value("name","zero")<<' '<<curtime.first<<':'<<curtime.second<<' ';
-		curtime.second+=2;
-		while(curtime.second>=60)curtime.second-=60,curtime.first++;
-		cout<<curtime.first<<':'<<curtime.second<<'\n';
-		last_meter=(*it).value("meter",0);
-	}
+	generate_simple_timetable(jingjiu,CR200J,pair<int,int>(19,59));
+	generate_simple_timetable(j,CRNAN,pair<int,int>(8,0));
+	
 	return 0;
 }
