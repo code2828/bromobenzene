@@ -211,7 +211,7 @@ void generate_simple_timetable(json line, json tr, pair<int,int> starting_time)
     int quang=0;cin>>quang;
     for(json::iterator it=line["stations"].begin(); it!=line["stations"].end(); it++)
     {
-        if(rand()%100<=quang&&it!=line["stations"].begin()&&(it+1)!=line["stations"].end())continue;
+        if(rand()%100<quang&&it!=line["stations"].begin()&&(it+1)!=line["stations"].end())continue;
         decimal addtime=place(0,tr,(*it).value("meter",0)-last_meter,true);
         addtime/=60;
         curtime.second+=ceil(addtime);
