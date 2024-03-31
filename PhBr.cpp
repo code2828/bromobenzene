@@ -37,13 +37,17 @@ struct Dir
 struct Station
 {
 	int serial;
+	int rank;
 	string id;
 	int dir_num;
 	Dir dirs[100];
-	char dir_comp[100][100] = {""};
+	short dir_comp[100][100] = {{0}};
 };
 
+inline bool cmp(Station _, Station __){return _.serial<__.serial;}
+
 vector<Station> v;
+map<string,int> stlist;
 
 decimal _basic_v(decimal x, decimal x00, decimal y00)
 {
@@ -90,59 +94,65 @@ void read_stations()
 		if(c=='@')
 		{
 			Station new_stat;
-			fin>>new_stat.serial>>new_stat.id>>new_stat.dir_num;
+			fin>>new_stat.serial>>new_stat.rank>>new_stat.id>>new_stat.dir_num;
 			for(int i=0;i<new_stat.dir_num;i++)
 			{
 				fin>>new_stat.dirs[i].serial>>new_stat.dirs[i].name>>new_stat.dirs[i].nex>>new_stat.dirs[i].nex_dir>>new_stat.dirs[i].dis;
-				if(i!=new_stat.dirs[i].serial)throw("Serial number does not match index!!\n");
-			}
-			for(int j=0;j<new_stat.dir_num;j++)
-			{
-				for(int k=0;k<new_stat.dir_num;k++)
+				if(i!=new_stat.dirs[i].serial)cerr<<"Serial number does not match index!! Serial = "<<new_stat.dirs[i].serial<<", i = "<<i<<" at "<<new_stat.id<<endl;
+				for(int j=0;j<new_stat.dir_num;j++)
 				{
-					fin>>new_stat.dir_comp[j][k];
+					fin>>new_stat.dir_comp[i][j];
 				}
 			}
 			v.push_back(new_stat);
+			stlist.insert({new_stat.id,new_stat.serial});
 		}
 	}
 }
 
 bool used[100]={0};
-string find_path(int st, int en)
+void find_path(int st, int en, int last_dir, string route, vector<string>& vec)
 {
 	if(st>=v.size())
 	{
 		cout<<"st is too big!\n";
-		return"";
+		return;
 	}
 	if(en>=v.size())
 	{
 		cout<<"en is too big!\n";
-		return "";
+		return;
 	}
-	cout<<v[st].id<<"到"<<v[en].id<<endl;
+	cout<<v[st].id<<"的"<<last_dir<<"到"<<v[en].id<<endl;
 	if(st==en)
 	{
 		cout<<"=====>\t好！\n";
-		return v[st].id;
+		if(route.size())route.append("->");
+		route.append(v[st].id);
+		vec.push_back(route);
+		return;
 	}
 	used[st]=1;
 	for(int i=0;i<v[st].dir_num;i++)
 	{
 		if(v[st].dirs[i].dis>0 && !used[v[st].dirs[i].nex])
 		{
-			string ret=find_path(v[st].dirs[i].nex,en);
-			if(ret!="")
+			bool needs_turning_around=0;
+			if(last_dir>=0)
 			{
-				ret.insert(0,"->");
-				ret.insert(0,v[st].id);
-				return ret;
+				if(v[st].dir_comp[last_dir][i]==0 || v[st].dir_comp[last_dir][i]==9) continue;
+				if(v[st].dir_comp[last_dir][i]==2) needs_turning_around=1;
 			}
+			string curstr=route;
+			if(route.size())route.append("->");
+			route.append(v[st].id);
+			if(needs_turning_around)route.append("（调向）");
+			find_path(v[st].dirs[i].nex,en,v[st].dirs[i].nex_dir,route,vec);
+			route=curstr;
 		}
 	}
 	used[st]=0;
-	return "";
+	return;
 }
 
 /*
@@ -174,7 +184,18 @@ int main()
 {
 	srand((unsigned)time(0));
 	read_stations();
-	cout<<find_path(1,4)<<endl;
+	sort(v.begin(),v.end(),cmp);
+	string a,b;
+	cout<<"从哪出发？（名称）  "<<flush;
+	cin>>a;
+	cout<<"到哪？（名称）  "<<flush;
+	cin>>b;
+	vector<string> vec;
+	find_path(stlist.find(a)->second,stlist.find(b)->second,-05,"",vec);
+	for(vector<string>::iterator it=vec.begin();it!=vec.end();it++)
+	{
+		cout<<(*it)<<endl;
+	}
 
 	return 0;
 }

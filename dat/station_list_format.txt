@@ -1,6 +1,6 @@
 for each station:
 ```
-@serial number
+@serial_number rank
 identifier
 number of distinct directions
 [directions]
