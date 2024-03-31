@@ -44,10 +44,22 @@ struct Station
 	short dir_comp[100][100] = {{0}};
 };
 
+struct Train
+{
+	int serial;
+	string name;
+	decimal max_acc;
+	decimal max_vel;
+	bool distributed;
+	bool highspeed_ok;	
+};
+
 inline bool cmp(Station _, Station __){return _.serial<__.serial;}
 
 vector<Station> v;
+vector<Train> trains;
 map<string,int> stlist;
+map<string,int> trlist;
 
 decimal _basic_v(decimal x, decimal x00, decimal y00)
 {
@@ -110,8 +122,23 @@ void read_stations()
 	}
 }
 
-bool used[100]={0};
-void find_path(int st, int en, int last_dir, string route, vector<string>& vec)
+void read_trains()
+{
+	ifstream fin("dat/reality.trainlist");
+	char c;
+	while(fin.get(c))
+	{
+		if(c=='@')
+		{
+			Train newtr;
+			fin>>newtr.serial>>newtr.name>>newtr.max_acc>>newtr.max_vel>>newtr.distributed>>newtr.highspeed_ok;
+			trains.push_back(newtr);
+			trlist.insert({newtr.name,newtr.serial});
+		}
+	}
+}
+
+void find_path(int st, int en, int last_dir, vector<pair<int,bool> > curroute, vector<vector<pair<int,bool> > >& vec, bool* used)
 {
 	if(st>=v.size())
 	{
@@ -127,9 +154,9 @@ void find_path(int st, int en, int last_dir, string route, vector<string>& vec)
 	if(st==en)
 	{
 		cout<<"=====>\t好！\n";
-		if(route.size())route.append("->");
-		route.append(v[st].id);
-		vec.push_back(route);
+		curroute.push_back(pair<int,bool>(st,0));
+		vec.push_back(curroute);
+		curroute.pop_back();
 		return;
 	}
 	used[st]=1;
@@ -143,12 +170,9 @@ void find_path(int st, int en, int last_dir, string route, vector<string>& vec)
 				if(v[st].dir_comp[last_dir][i]==0 || v[st].dir_comp[last_dir][i]==9) continue;
 				if(v[st].dir_comp[last_dir][i]==2) needs_turning_around=1;
 			}
-			string curstr=route;
-			if(route.size())route.append("->");
-			route.append(v[st].id);
-			if(needs_turning_around)route.append("（调向）");
-			find_path(v[st].dirs[i].nex,en,v[st].dirs[i].nex_dir,route,vec);
-			route=curstr;
+			curroute.push_back(pair<int,bool>(st,needs_turning_around));
+			find_path(v[st].dirs[i].nex,en,v[st].dirs[i].nex_dir,curroute,vec,used);
+			curroute.pop_back();
 		}
 	}
 	used[st]=0;
@@ -185,16 +209,25 @@ int main()
 	srand((unsigned)time(0));
 	read_stations();
 	sort(v.begin(),v.end(),cmp);
-	string a,b;
+	read_trains();
+	string a,b,c;
 	cout<<"从哪出发？（名称）  "<<flush;
 	cin>>a;
 	cout<<"到哪？（名称）  "<<flush;
 	cin>>b;
-	vector<string> vec;
-	find_path(stlist.find(a)->second,stlist.find(b)->second,-05,"",vec);
-	for(vector<string>::iterator it=vec.begin();it!=vec.end();it++)
+	cout<<"什么车？（名称）"<<flush;
+	cin>>c;
+	vector<vector<pair<int,bool> > > vec;
+	bool used[100];
+	vector<pair<int,bool> > curroute0;
+	find_path(stlist.find(a)->second,stlist.find(b)->second,-05,curroute0,vec,used);
+	for(vector<vector<pair<int,bool> > >::iterator it=vec.begin();it!=vec.end();it++)
 	{
-		cout<<(*it)<<endl;
+		for(vector<pair<int,bool> >::iterator jt=(*it).begin();jt!=(*it).end();jt++)
+		{
+			cout<<(jt!=(*it).begin()?"→":"")<<v[(*jt).first].id<<((*jt).second?"（调向）":"");
+		}
+		cout<<endl;
 	}
 
 	return 0;

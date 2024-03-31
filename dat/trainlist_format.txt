@@ -1,0 +1,7 @@
+for each train:
+serial number
+name
+max acceleration
+max velocity
+is distributed?
+can run on high speed railway?
