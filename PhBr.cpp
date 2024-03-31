@@ -215,8 +215,6 @@ int main()
 	cin>>a;
 	cout<<"到哪？（名称）  "<<flush;
 	cin>>b;
-	cout<<"什么车？（名称）"<<flush;
-	cin>>c;
 	vector<vector<pair<int,bool> > > vec;
 	bool used[100];
 	vector<pair<int,bool> > curroute0;
