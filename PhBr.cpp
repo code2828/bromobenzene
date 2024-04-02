@@ -43,6 +43,7 @@ struct Station
 	Dir dirs[100];
 	short dir_comp[100][100] = {{0}};
 };
+const Station stub = {-1,-1,"stub",0};
 
 struct Train
 {
@@ -110,13 +111,16 @@ void read_stations()
 			for(int i=0;i<new_stat.dir_num;i++)
 			{
 				fin>>new_stat.dirs[i].serial>>new_stat.dirs[i].name>>new_stat.dirs[i].nex>>new_stat.dirs[i].nex_dir>>new_stat.dirs[i].dis;
-				if(i!=new_stat.dirs[i].serial)cerr<<"Serial number does not match index!! Serial = "<<new_stat.dirs[i].serial<<", i = "<<i<<" at "<<new_stat.id<<endl;
 				for(int j=0;j<new_stat.dir_num;j++)
 				{
 					fin>>new_stat.dir_comp[i][j];
 				}
 			}
-			v.push_back(new_stat);
+			while(v.size()<=new_stat.serial)
+			{
+				v.push_back(stub);
+			}
+			v[new_stat.serial]=new_stat;
 			stlist.insert({new_stat.id,new_stat.serial});
 		}
 	}
@@ -208,7 +212,6 @@ int main()
 {
 	srand((unsigned)time(0));
 	read_stations();
-	sort(v.begin(),v.end(),cmp);
 	read_trains();
 	string a,b,c;
 	cout<<"从哪出发？（名称）  "<<flush;
